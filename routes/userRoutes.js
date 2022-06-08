@@ -6,11 +6,13 @@ const router = express.Router();
 const User = require('../models/userModel');
 
 //Create
-router.post('/user', async (req, res) => {
+router.post('/users', async (req, res) => {
+  // destructuring de req.fields
+  const { name, city } = req.fields;
   //1. Créer un utilisateur
   const user = new User({
-    name: req.fields.name,
-    city: req.fields.city,
+    name: name,
+    city: city,
   });
 
   //2. Sauvegarder dans la bdd (sauvegarde toujours asynchrone, + try catch!!)
@@ -36,13 +38,14 @@ router.get('/users', async (_, res) => {
 });
 
 //Update
-router.post('/user/update', async (req, res) => {
+router.put('/users/:userId', async (req, res) => {
   try {
     //1. Rechercher l'utilisateur dans la BDD
-    const userId = req.fields.userId;
-    const user = await User.findById(userId);
+    const user = await User.findById(req.params.userId);
 
-    if (user) {
+    if (!user) {
+      return res.status(404).json({ message: 'user not found' });
+    } else {
       //2. Faire la modification si il existe
       user.city = req.fields.city;
 
@@ -51,8 +54,6 @@ router.post('/user/update', async (req, res) => {
 
       //3. Répondre au client
       return res.json(user);
-    } else {
-      return res.status(404).json({ message: 'user not found' });
     }
   } catch (e) {
     return res.status(400).json({ message: e.message });
@@ -60,18 +61,18 @@ router.post('/user/update', async (req, res) => {
 });
 
 //Delete
-router.post('/user/delete', async (req, res) => {
+router.delete('/users/:userId', async (req, res) => {
   try {
     //1. Rechercher dans la BDD
-    const user = await User.findById(req.fields.userId);
+    const user = await User.findById(req.params.userId);
 
-    if (user) {
+    if (!user) {
+      res.status(404).json({ message: 'user not found' });
+    } else {
       //2. Si il existe le supprimer
       user.remove();
       //3. Repondre au client (pas besoin de save)
       res.json({ message: 'user deleted' });
-    } else {
-      res.status(404).json({ message: 'user not found' });
     }
   } catch (e) {
     return res.status(400).json({ message: e.message });
